@@ -43,12 +43,5 @@ RUN git clone https://github.com/seznam/elasticlient.git /tmp/elasticlient \
     && make install \ 
     && rm -rf /tmp/elasticlient
 
-RUN VERSION=`git ls-remote https://github.com/maurodelazeri/mandarinfish | grep refs/tags | grep -oE "[0-9]+\.[0-9]+\.[0-9]+$" | sort --version-sort | tail -n 1` \
-    && sh -c "curl -L https://github.com/maurodelazeri/mandarinfish/releases/download/${VERSION}/mandarinfish > /usr/local/bin/mandarinfish" \
-    && chmod +x /usr/local/bin/mandarinfish
-
-#RUN git clone  https://github.com/maurodelazeri/mandarinfish.git /tmp/mandarinfish \
-#    && cd /tmp/mandarinfish \
-#    && cmake . \
-#    && make -j4 \
-#    && rm -rf /tmp/mandarinfish
+COPY ./start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh

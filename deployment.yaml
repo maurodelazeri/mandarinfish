@@ -27,7 +27,8 @@ spec:
 #            limits:
 #              memory: "500Mi"
 #              cpu: "500m"
-          command: ["mandarinfish"]
+          command: ["/bin/sh"]
+          args: ["-c", "/usr/local/bin/start.sh"]
           env:
             - name: TOPIC
               value: "tracking"
@@ -38,7 +39,7 @@ spec:
             - name: EL_INDEX
               value: "testindex"
             - name: EL_CLUSTER_ADDRS
-              value: "http://elastic1.host:9200/"
+              value: "http://elasticsearch-logging:9200/"
             - name: BULK_INSERT_SIZE
               value: "100"
             - name: DEBUG
