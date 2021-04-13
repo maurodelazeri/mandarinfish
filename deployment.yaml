@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mandarinfish
+  labels:
+    app: mandarinfish
+spec:
+  selector:
+    matchLabels:
+      app: mandarinfish
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mandarinfish
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: mandarinfish
+          imagePullPolicy: Always
+          image: zinnionlcc/mandarinfish
+#          resources:
+#            requests:
+#              memory: "250Mi"
+#              cpu: "250m"
+#            limits:
+#              memory: "500Mi"
+#              cpu: "500m"
+          command: ["mandarinfish"]
+          env:
+            - name: TOPIC
+              value: "tracking"
+            - name: BROKERS_LIST
+              value: "right-indri-cp-kafka-2.right-indri-cp-kafka-headless:9092"
+            - name: GROUP_ID
+              value: "mandarinfish"
+            - name: EL_INDEX
+              value: "testindex"
+            - name: EL_CLUSTER_ADDRS
+              value: "http://elastic1.host:9200/"
+            - name: BULK_INSERT_SIZE
+              value: "100"
+            - name: DEBUG
+              value: "true"
+            - name: MALLOC_MMAP_THRESHOLD_
+              value: "8192"
+            - name: MALLOC_ARENA_MAX
+              value: "4"
