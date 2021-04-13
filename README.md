@@ -1,18 +1,6 @@
 # mandarinfish
 Kafka pipeline to Elasticsearch
 
-### WORKING IN PROGRESS
-
-### Dependencies
-
-https://github.com/edenhill/librdkafka
-
-https://github.com/mfontanini/cppkafka
-
-https://github.com/gabime/spdlog
-
-https://github.com/seznam/elasticlient 
-
 ### Build docker image
 
 ```
@@ -23,6 +11,21 @@ make
 cd ..
 docker build -t mandarinfish .
 ```
+
+### Kubernetes
+
+`deployment.yaml` is available
+
+
+### Dependencies
+
+https://github.com/edenhill/librdkafka
+
+https://github.com/mfontanini/cppkafka
+
+https://github.com/gabime/spdlog
+
+https://github.com/seznam/elasticlient 
 
 
 ### Create timestamp on insert
