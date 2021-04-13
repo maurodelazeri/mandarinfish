@@ -32,7 +32,7 @@ spec:
             - name: TOPIC
               value: "tracking"
             - name: BROKERS_LIST
-              value: "right-indri-cp-kafka-2.right-indri-cp-kafka-headless:9092"
+              value: "right-indri-cp-kafka-headless.metrics.svc.cluster.local:9092"
             - name: GROUP_ID
               value: "mandarinfish"
             - name: EL_INDEX

@@ -99,9 +99,9 @@ void Streaming::start() {
                         cout << msg.get_key() << " -> ";
                     }
                     // Print the payload
-                    if (system_debug_) {
-                        cout << msg.get_payload() << endl;
-                    }
+//                    if (system_debug_) {
+//                        cout << msg.get_payload() << endl;
+//                    }
                 }
 
                 bulk.indexDocument("docType", sole::uuid4().str(), msg.get_payload());
