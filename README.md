@@ -1,14 +1,20 @@
 # mandarinfish
 Kafka pipeline to Elasticsearch
 
-### Build docker image
+### Compilation to build a new release
 
 ```
 mkdir build
 cd build
 cmake ..
 make
-cd ..
+```
+
+### Build docker image
+
+Note that you need to build a [release](https://github.com/maurodelazeri/mandarinfish/releases) first
+
+```
 docker build -t mandarinfish .
 ```
 
