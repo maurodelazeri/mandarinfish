@@ -108,15 +108,20 @@ void Streaming::start() {
                     time = timestamp.GetString();
                     time = time.substr(0, 10);
                     std::replace(time.begin(), time.end(), '-', '.');
-                }
-
-                cpr::Response indexResponse = client_->index(el_index_ + time, "docType", sole::uuid4().str(),
-                                                             msg.get_payload());
-                if (indexResponse.status_code != 200) {
-                    spdlog::error("Error while inserting on elasticsearch: Status code {} Message {}",
-                                  indexResponse.status_code, indexResponse.text);
+                } else {
+                    spdlog::error("Field @timestamp does not exist.");
                     return;
                 }
+
+                cout << "updating data on the index " << el_index_ + time << " " << msg.get_payload() << endl;
+
+//                cpr::Response indexResponse = client_->index(el_index_ + time, "docType", sole::uuid4().str(),
+//                                                             msg.get_payload());
+//                if (indexResponse.status_code != 200) {
+//                    spdlog::error("Error while inserting on elasticsearch: Status code {} Message {}",
+//                                  indexResponse.status_code, indexResponse.text);
+//                    return;
+//                }
 
                 // Now commit the message
                 consumer.commit(msg);
