@@ -43,5 +43,12 @@ RUN git clone https://github.com/seznam/elasticlient.git /tmp/elasticlient \
     && make install \ 
     && rm -rf /tmp/elasticlient
 
+RUN git clone https://github.com/Tencent/rapidjson.git /tmp/rapidjson \
+    && cd /tmp/rapidjson \
+    && cmake . \
+    && make -j4 \
+    && make install \
+    && rm -rf /tmp/rapidjson
+
 COPY ./start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh

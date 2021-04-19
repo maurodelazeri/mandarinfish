@@ -7,6 +7,9 @@
 #include <iostream>
 #include <csignal>
 #include <fstream>
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/writer.h>
 #include <spdlog/spdlog.h>
 #include <boost/program_options.hpp>
 #include <cppkafka/consumer.h>
@@ -42,7 +45,6 @@ private:
     }
 
     bool system_debug_{false};
-    int bulk_inser_size_;
     std::string el_index_;
     std::shared_ptr<elasticlient::Client> client_;
 public:
@@ -51,5 +53,4 @@ public:
     ~Streaming();
 
     void start();
-    void mock();
 };

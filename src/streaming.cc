@@ -17,21 +17,9 @@ Streaming::Streaming() {
     client_ = std::make_shared<elasticlient::Client>(
             std::vector<std::string>({el_cluster_addrs}));  // last / is mandatory
 
-    std::string bulk_size = getEnvVar("BULK_INSERT_SIZE");
-    if (bulk_size.empty()) {
-        spdlog::info("Please specify export the variable BULK_INSERT_SIZE");
-        exit(1);
-    }
-
     el_index_ = getEnvVar("EL_INDEX");
     if (el_index_.empty()) {
         spdlog::info("Please specify export the variable EL_INDEX");
-        exit(1);
-    }
-
-    bulk_inser_size_ = std::stoi(bulk_size);
-    if (bulk_inser_size_ <= 0) {
-        spdlog::info("Please specify export the variable BULK_INSERT_SIZE as an integer");
         exit(1);
     }
 }
@@ -64,9 +52,6 @@ void Streaming::start() {
             // Disable auto commit
             {"enable.auto.commit",   false}
     };
-
-    elasticlient::SameIndexBulkData bulk(el_index_, bulk_inser_size_);
-    elasticlient::Bulk bulkIndexer(client_);
 
     // Create the consumer
     Consumer consumer(config);
@@ -104,17 +89,35 @@ void Streaming::start() {
 //                    }
                 }
 
-                bulk.indexDocument("docType", sole::uuid4().str(), msg.get_payload());
-                if (bulk.size() == bulk_inser_size_ - 1) {
-                    size_t errors = bulkIndexer.perform(bulk);
-
-                    if (system_debug_) {
-                        std::cout << "When indexing " << bulk.size() << " documents, "
-                                  << errors << " errors occured" << std::endl;
-                    }
-
-                    bulk.clear();
+                std::string payload = msg.get_payload();
+                rapidjson::Document document;
+                // Parse the JSON
+                if (document.Parse(payload.c_str()).HasParseError()) {
+                    spdlog::error("Document parse error: {}", payload);
+                    return;
                 }
+
+                if (!document.IsObject()) {
+                    spdlog::error("Error: {}", "No data");
+                    return;
+                }
+
+                std::string time;
+                if (document.HasMember("@timestamp")) {
+                    const rapidjson::Value &timestamp = document["@timestamp"];
+                    time = timestamp.GetString();
+                    time = time.substr(0, 10);
+                    std::replace(time.begin(), time.end(), '-', '.');
+                }
+
+                cpr::Response indexResponse = client_->index(el_index_ + time, "docType", sole::uuid4().str(),
+                                                             msg.get_payload());
+                if (indexResponse.status_code != 200) {
+                    spdlog::error("Error while inserting on elasticsearch: Status code {} Message {}",
+                                  indexResponse.status_code, indexResponse.text);
+                    return;
+                }
+
                 // Now commit the message
                 consumer.commit(msg);
             },
