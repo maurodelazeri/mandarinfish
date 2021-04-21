@@ -28,16 +28,17 @@ spec:
 #              memory: "500Mi"
 #              cpu: "500m"
           command: ["/bin/sh"]
-          #args: ["-c", "/usr/local/bin/start.sh"]
-          args: ["-c", "sleep 10000"]
+          args: ["-c", "/usr/local/bin/start.sh"]
+          #args: ["-c", "sleep 10000000"]
           env:
             - name: TOPIC
               value: "tracking"
             - name: BROKERS_LIST
               value: "right-indri-cp-kafka-headless.metrics.svc.cluster.local:9092"
             - name: GROUP_ID
-              value: "mandarinfish"
+              value: "mandarinfish_influx"
             - name: EL_INDEX
+              #value: "tracking-"
               value: "tracking-"
             - name: EL_CLUSTER_ADDRS
               value: "http://elasticsearch-master:9200/"

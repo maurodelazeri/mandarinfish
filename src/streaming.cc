@@ -26,6 +26,12 @@ Streaming::Streaming() {
 
 Streaming::~Streaming() {}
 
+template<class Precision>
+std::string getISOCurrentTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    return date::format("%FT%T", date::floor<Precision>(now));
+}
+
 void Streaming::start() {
     try {
         std::string topic_name = getEnvVar("TOPIC");
@@ -92,6 +98,8 @@ void Streaming::start() {
 
                     std::string payload = msg.get_payload();
                     rapidjson::Document document;
+                    rapidjson::Document::AllocatorType &allocator = document.GetAllocator();
+
                     // Parse the JSON
                     if (document.Parse(payload.c_str()).HasParseError()) {
                         spdlog::error("Document parse error: {}", payload);
@@ -103,6 +111,18 @@ void Streaming::start() {
                         return;
                     }
 
+                    // Mock timestamp
+//                    rapidjson::Value val(rapidjson::kObjectType);
+//                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
+//                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
+//                                  allocator);
+//                    document.AddMember("@timestamp", val, allocator);
+
+                    rapidjson::StringBuffer sb;
+                    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
+                    document.Accept(writer);
+//                    puts(sb.GetString());
+
                     std::string time;
                     if (document.HasMember("@timestamp")) {
                         const rapidjson::Value &timestamp = document["@timestamp"];
@@ -113,19 +133,18 @@ void Streaming::start() {
                         spdlog::error("Field @timestamp does not exist.");
                         return;
                     }
-
 //                    cout << "updating data on the index " << el_index_ + time << " " << msg.get_payload() << endl;
 
-                    cpr::Response indexResponse = client_->index(el_index_ + time, "mandarinfish", sole::uuid4().str(),
-                                                                 msg.get_payload());
-                    if (indexResponse.status_code != 200) {
+                    cpr::Response indexResponse = client_->index(el_index_ + time, "fluentd", sole::uuid4().str(),
+                                                                 sb.GetString());
+                    if (indexResponse.status_code == 200 || indexResponse.status_code == 201) {
+                        // all good
+                        // Now commit the message
+                        consumer.commit(msg);
+                    } else {
                         spdlog::error("Error while inserting on elasticsearch: Status code {} Message {}",
                                       indexResponse.status_code, indexResponse.text);
-                        return;
                     }
-
-                    // Now commit the message
-                    consumer.commit(msg);
                 },
                 // Whenever there's an error (other than the EOF soft error)
                 [](Error error) {

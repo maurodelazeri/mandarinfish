@@ -19,6 +19,7 @@
 #include <elasticlient/client.h>
 #include <elasticlient/bulk.h>
 #include "sole.h"
+#include <date/date.h>
 
 using std::string;
 using std::exception;
