@@ -38,7 +38,7 @@ spec:
             - name: GROUP_ID
               value: "mandarinfish"
             - name: EL_INDEX
-              value: "mauro-"
+              value: "tracking-"
             - name: EL_CLUSTER_ADDRS
               value: "http://elasticsearch-master:9200/"
             - name: DEBUG

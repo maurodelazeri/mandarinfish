@@ -116,7 +116,7 @@ void Streaming::start() {
 
 //                    cout << "updating data on the index " << el_index_ + time << " " << msg.get_payload() << endl;
 
-                    cpr::Response indexResponse = client_->index(el_index_ + time, "docType", sole::uuid4().str(),
+                    cpr::Response indexResponse = client_->index(el_index_ + time, "mandarinfish", sole::uuid4().str(),
                                                                  msg.get_payload());
                     if (indexResponse.status_code != 200) {
                         spdlog::error("Error while inserting on elasticsearch: Status code {} Message {}",
