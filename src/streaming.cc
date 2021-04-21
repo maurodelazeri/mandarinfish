@@ -22,6 +22,12 @@ Streaming::Streaming() {
         spdlog::info("Please specify export the variable EL_INDEX");
         exit(1);
     }
+
+    bulk_size_ = std::stoi(getEnvVar("BULK_SIZE"));
+    if (bulk_size_ <= 0) {
+        spdlog::info("Please specify export the variable BULK_SIZE or make it a valid number");
+        exit(1);
+    }
 }
 
 Streaming::~Streaming() {}
@@ -80,6 +86,9 @@ void Streaming::start() {
         // Create a consumer dispatcher
         ConsumerDispatcher dispatcher(consumer);
 
+        elasticlient::Bulk bulkIndexer(client_);
+
+        std::vector<std::string> bunlk_data;
         // Now run the dispatcher, providing a callback to handle messages, one to handle
         // errors and another one to handle EOF on a partition
         dispatcher.run(
@@ -112,14 +121,15 @@ void Streaming::start() {
                     }
 
                     // Mock timestamp
-//                    rapidjson::Value val(rapidjson::kObjectType);
-//                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
-//                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
-//                                  allocator);
-//                    document.AddMember("@timestamp", val, allocator);
+                    rapidjson::Value val(rapidjson::kObjectType);
+                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
+                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
+                                  allocator);
+                    document.AddMember("@timestamp", val, allocator);
+                    // ------------------
 
                     rapidjson::StringBuffer sb;
-                    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
+                    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
                     document.Accept(writer);
 //                    puts(sb.GetString());
 
@@ -133,18 +143,25 @@ void Streaming::start() {
                         spdlog::error("Field @timestamp does not exist.");
                         return;
                     }
-//                    cout << "updating data on the index " << el_index_ + time << " " << msg.get_payload() << endl;
 
-                    cpr::Response indexResponse = client_->index(el_index_ + time, "fluentd", sole::uuid4().str(),
-                                                                 sb.GetString());
-                    if (indexResponse.status_code == 200 || indexResponse.status_code == 201) {
-                        // all good
-                        // Now commit the message
-                        consumer.commit(msg);
-                    } else {
-                        spdlog::error("Error while inserting on elasticsearch: Status code {} Message {}",
-                                      indexResponse.status_code, indexResponse.text);
+                    bunlk_data.emplace_back(sb.GetString());
+
+                    if (bunlk_data.size() > bulk_size_) {
+                        if (system_debug_) {
+                            spdlog::info("Bulk full, inserting {} records", bunlk_data.size());
+                        }
+                        elasticlient::SameIndexBulkData bulk(el_index_ + time, bunlk_data.size());
+                        for (auto const &x : bunlk_data) {
+                            bulk.indexDocument("fluentd", sole::uuid4().str(), x);
+                        }
+                        size_t errors = bulkIndexer.perform(bulk);
+                        if (errors > 0) {
+                            spdlog::error("When indexing {} documents, {} errors occured", bulk.size(), errors);
+                        }
+                        bulk.clear();
+                        bunlk_data.clear();
                     }
+                    consumer.commit(msg);
                 },
                 // Whenever there's an error (other than the EOF soft error)
                 [](Error error) {

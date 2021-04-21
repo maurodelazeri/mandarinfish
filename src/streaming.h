@@ -47,6 +47,7 @@ private:
 
     bool system_debug_{false};
     std::string el_index_;
+    unsigned int bulk_size_;
     std::shared_ptr<elasticlient::Client> client_;
 public:
     Streaming();
