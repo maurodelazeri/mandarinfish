@@ -121,16 +121,16 @@ void Streaming::start() {
                     }
 
                     // Mock timestamp
-                    rapidjson::Value val(rapidjson::kObjectType);
-                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
-                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
-                                  allocator);
-                    document.AddMember("@timestamp", val, allocator);
+//                    rapidjson::Value val(rapidjson::kObjectType);
+//                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
+//                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
+//                                  allocator);
+//                    document.AddMember("@timestamp", val, allocator);
                     // ------------------
 
-                    rapidjson::StringBuffer sb;
-                    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-                    document.Accept(writer);
+//                    rapidjson::StringBuffer sb;
+//                    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+//                    document.Accept(writer);
 //                    puts(sb.GetString());
 
                     std::string time;
@@ -144,8 +144,8 @@ void Streaming::start() {
                         return;
                     }
 
-                    bunlk_data.emplace_back(sb.GetString());
-
+                    //bunlk_data.emplace_back(sb.GetString());
+                    bunlk_data.emplace_back(payload.c_str());
                     if (bunlk_data.size() > bulk_size_) {
                         if (system_debug_) {
                             spdlog::info("Bulk full, inserting {} records", bunlk_data.size());
@@ -156,7 +156,7 @@ void Streaming::start() {
                         }
                         size_t errors = bulkIndexer.perform(bulk);
                         if (errors > 0) {
-                            spdlog::error("When indexing {} documents, {} errors occured", bulk.size(), errors);
+                            spdlog::error("When indexing {} documents, {} errors occurred", bulk.size(), errors);
                         }
                         bulk.clear();
                         bunlk_data.clear();
