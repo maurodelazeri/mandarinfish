@@ -36,7 +36,7 @@ spec:
             - name: BROKERS_LIST
               value: "right-indri-cp-kafka-headless.metrics.svc.cluster.local:9092"
             - name: GROUP_ID
-              value: "mandarinfish5"
+              value: "mandarinfish7"
             - name: EL_INDEX
               value: "tracking-"
               #value: "mauro-"
