@@ -20,6 +20,7 @@
 #include <elasticlient/bulk.h>
 #include "sole.h"
 #include <date/date.h>
+#include "ThreadPool.h"
 
 using std::string;
 using std::exception;
@@ -45,10 +46,15 @@ private:
         return val == nullptr ? std::string() : std::string(val);
     }
 
+    ThreadPool pool_elasticsearch{static_cast<size_t>(std::stoi(getEnvVar("THREADPOOL")))};
+
     bool system_debug_{false};
     std::string el_index_;
     unsigned int bulk_size_;
     std::shared_ptr<elasticlient::Client> client_;
+
+    void PushToElasticSearch(const std::string &index, const std::vector<std::string> &data);
+
 public:
     Streaming();
 

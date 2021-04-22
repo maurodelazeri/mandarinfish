@@ -22,7 +22,7 @@ find_package(Boost QUIET REQUIRED COMPONENTS program_options)
 add_executable(mandarinfish main.cc
         src/streaming.cc
         src/streaming.h
-        src/sole.h)
+        src/sole.h src/ThreadPool.h)
 
 target_link_libraries(mandarinfish
         pthread

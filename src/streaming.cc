@@ -28,6 +28,12 @@ Streaming::Streaming() {
         spdlog::info("Please specify export the variable BULK_SIZE or make it a valid number");
         exit(1);
     }
+
+    auto pool_size = std::stoi(getEnvVar("THREADPOOL"));
+    if (pool_size <= 0) {
+        spdlog::info("Please specify export the variable THREADPOOL or make it a valid number");
+        exit(1);
+    }
 }
 
 Streaming::~Streaming() {}
@@ -36,6 +42,26 @@ template<class Precision>
 std::string getISOCurrentTimestamp() {
     auto now = std::chrono::system_clock::now();
     return date::format("%FT%T", date::floor<Precision>(now));
+}
+
+void Streaming::PushToElasticSearch(const std::string &index, const std::vector<std::string> &data) {
+    pool_elasticsearch.enqueue([index, data, this] {
+        try {
+            elasticlient::SameIndexBulkData bulk(index, data.size());
+            for (auto const &x : data) {
+                bulk.indexDocument("fluentd", sole::uuid4().str(), x);
+            }
+            elasticlient::Bulk bulkIndexer(client_);
+            size_t errors = bulkIndexer.perform(bulk);
+            if (errors > 0) {
+                spdlog::error("When indexing {} documents, {} errors occurred", bulk.size(), errors);
+            }
+            bulk.clear();
+        }
+        catch (std::exception &e) {
+            spdlog::error("PushToElasticSearch error: {}", e.what());
+        }
+    });
 }
 
 void Streaming::start() {
@@ -86,8 +112,6 @@ void Streaming::start() {
         // Create a consumer dispatcher
         ConsumerDispatcher dispatcher(consumer);
 
-        elasticlient::Bulk bulkIndexer(client_);
-
         std::vector<std::string> bunlk_data;
         // Now run the dispatcher, providing a callback to handle messages, one to handle
         // errors and another one to handle EOF on a partition
@@ -121,16 +145,16 @@ void Streaming::start() {
                     }
 
                     // Mock timestamp
-//                    rapidjson::Value val(rapidjson::kObjectType);
-//                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
-//                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
-//                                  allocator);
-//                    document.AddMember("@timestamp", val, allocator);
+                    rapidjson::Value val(rapidjson::kObjectType);
+                    std::string t = getISOCurrentTimestamp<chrono::microseconds>();
+                    val.SetString(t.c_str(), static_cast<rapidjson::SizeType>(t.length()),
+                                  allocator);
+                    document.AddMember("@timestamp", val, allocator);
                     // ------------------
 
-//                    rapidjson::StringBuffer sb;
-//                    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-//                    document.Accept(writer);
+                    rapidjson::StringBuffer sb;
+                    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+                    document.Accept(writer);
 //                    puts(sb.GetString());
 
                     std::string time;
@@ -144,21 +168,13 @@ void Streaming::start() {
                         return;
                     }
 
-                    //bunlk_data.emplace_back(sb.GetString());
-                    bunlk_data.emplace_back(payload.c_str());
+                    bunlk_data.emplace_back(sb.GetString());
+                    //bunlk_data.emplace_back(payload.c_str());
                     if (bunlk_data.size() > bulk_size_) {
                         if (system_debug_) {
                             spdlog::info("Bulk full, inserting {} records", bunlk_data.size());
                         }
-                        elasticlient::SameIndexBulkData bulk(el_index_ + time, bunlk_data.size());
-                        for (auto const &x : bunlk_data) {
-                            bulk.indexDocument("fluentd", sole::uuid4().str(), x);
-                        }
-                        size_t errors = bulkIndexer.perform(bulk);
-                        if (errors > 0) {
-                            spdlog::error("When indexing {} documents, {} errors occurred", bulk.size(), errors);
-                        }
-                        bulk.clear();
+                        PushToElasticSearch(el_index_ + time, bunlk_data);
                         bunlk_data.clear();
                     }
                     consumer.commit(msg);

@@ -36,10 +36,12 @@ spec:
             - name: BROKERS_LIST
               value: "right-indri-cp-kafka-headless.metrics.svc.cluster.local:9092"
             - name: GROUP_ID
-              value: "mandarinfish2"
+              value: "mandarinfish4"
             - name: EL_INDEX
               #value: "tracking-"
               value: "mauro-"
+            - name: THREADPOOL
+              value: "5"
             - name: BULK_SIZE
               value: "1000"
             - name: EL_CLUSTER_ADDRS
